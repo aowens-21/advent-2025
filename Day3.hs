@@ -22,10 +22,27 @@ buildMaxJoltage ints =
     in
         read digits :: Int
 
+getMaxInArrWithLeftover :: [Int] -> Int -> [Int] -> [Int]
+getMaxInArrWithLeftover arr leftover acc =
+    case leftover of 0 -> acc
+                     _ -> let possibleDigits = case leftover of 1 -> arr
+                                                                _ -> take (length arr - leftover + 1) arr 
+                              leftDigit = maximum possibleDigits
+                              indexOfMax = elemIndex leftDigit arr
+                              indexAsInt = case indexOfMax of Just x -> x
+                                                              Nothing -> -1 -- not possible in a non-empty list
+                              rest = drop (indexAsInt + 1) arr
+                          in
+                            getMaxInArrWithLeftover rest (leftover - 1) (leftDigit:acc)
 
 getArrOfInts :: String -> [Int]
 getArrOfInts = map digitToInt 
 
-
 solve2 :: [String] -> Int
-solve2 _ = 0
+solve2 lines = 
+    let intArrs = map getArrOfInts lines
+        reversedVoltagesAsArrays = map (\arr -> getMaxInArrWithLeftover arr 12 []) intArrs
+        voltagesAsArrays = map reverse reversedVoltagesAsArrays
+        voltagesAsStrings = map (concatMap show) voltagesAsArrays 
+        voltagesAsNums = map (\v -> read v :: Int) voltagesAsStrings
+    in sum voltagesAsNums
