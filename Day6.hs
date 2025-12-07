@@ -1,6 +1,8 @@
 
 import Helpers
 import Data.Char
+import Data.List.Split
+import Data.List (findIndex)
 
 main = do
     runner "inputs/day6_real.txt" solve1 solve2
@@ -25,11 +27,37 @@ solveProblem problem =
                    "+" -> sum nums
 
 solve2 :: [String] -> Int
-solve2 _ = 0
+solve2 lines =
+    let problems = processLines lines
+    in sum (map processProblem problems)
+ 
+processLines :: [String] -> [[String]]
+processLines lines =
+    let lineLen = length (head lines)
+        range = [lineLen-1,lineLen-2..0]
+    in  createProblems (filter (\s -> (not (all isSpace s))) (map (\i -> (map (\s -> s!!i) lines)) range))
 
-debug :: IO ()
-debug = do
-    contents <- readFile "inputs/day6_test.txt"
-    print (lines contents)
+createProblems :: [String] -> [[String]]
+createProblems allItems =
+    createProblems' allItems []
+    where 
+        createProblems' [] acc = acc
+        createProblems' items acc =
+            let endOfCurrProblemMaybe = findIndex (\numStr -> last numStr == '+' || last numStr == '*') items
+                endOfCurrProblem = case endOfCurrProblemMaybe of Nothing -> error "Impossible!"
+                                                                 Just i -> i
+                currProblem = take (endOfCurrProblem + 1) items
+                restOfProblems = drop (endOfCurrProblem + 1) items
+            in createProblems' restOfProblems ([currProblem] ++ acc)
 
--- ["123 328  51 64 "," 45 64  387 23 ","  6 98  215 314","*   +   *   +  "] --
+processProblem :: [String] -> Int
+processProblem parts =
+    let allButLast = init parts
+        lastWithOp = last parts
+        op = last lastWithOp
+        lastWithoutOp = init lastWithOp
+        allNumsAsStrs = allButLast ++ [lastWithoutOp]
+        allNums = map (\s -> read s :: Int) allNumsAsStrs
+    in
+        case op of '+' -> sum allNums
+                   '*' -> product allNums
